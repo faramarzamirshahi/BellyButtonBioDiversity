@@ -22,6 +22,16 @@ function init() {
 
 // Initialize the dashboard
 init();
+// Add listener for dropdown
+d3.selectAll("#selDataset").on("change", updatePlotly);
+
+function updatePlotly(){
+  // Use D3 to select the dropdown menu
+  var dropdownMenu = d3.select("#selDataset");
+  // Assign the value of the dropdown menu option to a variable
+  var newSample = dropdownMenu.property("value");
+  optionChanged(newSample);
+}
 
 function optionChanged(newSample) {
   // Fetch new data each time a new sample is selected
@@ -63,7 +73,7 @@ function buildCharts(sample) {
     sampledatafiltered = sampledata.filter( d => d.id === sample);
 
     //  5. Create a variable that holds the first sample in the array.
-    var displayData = [sampledatafiltered[0]];
+    var displayData = sampledatafiltered[0];
 
     // 6. Create variables that hold the otu_ids, otu_labels, and sample_values.
     otuids = [];
@@ -73,17 +83,17 @@ function buildCharts(sample) {
     // 7. Create the yticks for the bar chart.
     // Hint: Get the the top 10 otu_ids and map them in descending order  
     //  so the otu_ids with the most bacteria are last. 
-    var topvalues = displayData .sort((a,b) => a.sample_values < b.sample_values)
+    var topvalues = [displayData].sort((a,b) => a.sample_values < b.sample_values)
     otuids = topvalues[0].otu_ids.slice(0,10).reverse();
-    otuids = otuids.map(d => `otu_${d}`);
+    var otuidsbar = otuids.map(d => `otu_${d}`);
     labels = topvalues[0].otu_labels.slice(0,10).reverse();
     values = topvalues[0].sample_values.slice(0,10).reverse();
     // 8. Create the trace for the bar chart. 
     var barData = [{
       x: values,
-      y: otuids,
+      y: otuidsbar,
       text: labels,
-      name: "otu",
+      name: "bar plot",
       type: "bar",
       orientation: "h"
     }];
@@ -99,6 +109,34 @@ function buildCharts(sample) {
     };
     // 10. Use Plotly to plot the data with the layout. 
    Plotly.newPlot("plotArea",barData,barLayout);
+
+   // Scattered plot
+    // 1. Create the trace for the bubble chart.
+    //var hoverText = sampledatafiltered[0].map(d => '(' + d.otu_id + ',' + d.sample_values + ',' + d.otu_labels)
+    var bubbleData = [
+      {
+        x: displayData.otu_ids,
+        y: displayData.sample_values,
+        text: displayData.otu_labels,
+        name: "scattered plot",
+        mode: 'markers',
+        type: "scatter",
+        marker: { size: displayData.sample_values}
+      }
+    ];
+
+    // 2. Create the layout for the bubble chart.
+    var bubbleLayout = {
+      title: 'Bacteria Cultures Per Sample',
+      autocolorscale:true,
+      colorscale: 'sequential',
+      xaxis: {
+        title: 'OTU ID'
+      },
+    };
+
+    // 3. Use Plotly to plot the data with the layout.
+    Plotly.newPlot("scatteredPlot",bubbleData,bubbleLayout);
   });
 
 }
